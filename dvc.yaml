@@ -1,0 +1,25 @@
+stages:
+  preparation:
+    cmd: python src/prepare.py
+    deps:
+    - data/raw/Online Retail.xlsx
+    - src/prepare.py
+    outs:
+    - data/prepared/test.csv
+    - data/prepared/train.csv
+    - plots/data_distribution.png
+  train:
+    cmd: python src/train.py
+    deps:
+    - data/prepared/train.csv
+    - src/train.py
+    outs:
+    - models/model.pkl
+  evaluate:
+    cmd: python src/evaluate.py
+    deps:
+    - data/prepared/test.csv
+    - models/model.pkl
+    - src/evaluate.py
+    outs:
+    - metrics.json

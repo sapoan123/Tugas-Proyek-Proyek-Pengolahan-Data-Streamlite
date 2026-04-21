@@ -1,0 +1,62 @@
+schema: '2.0'
+stages:
+  preparation:
+    cmd: python src/prepare.py
+    deps:
+    - path: data/raw/Online Retail.xlsx
+      hash: md5
+      md5: 8f8e6d94ba88f976f4d8290cb2dea7fd
+      size: 23715344
+    - path: src/prepare.py
+      hash: md5
+      md5: 3d02de78b9cc76fadbc50f4157e8c95c
+      size: 1818
+    outs:
+    - path: data/prepared/test.csv
+      hash: md5
+      md5: 18daa17175f32cd5d102becfdaec2739
+      size: 1331821
+    - path: data/prepared/train.csv
+      hash: md5
+      md5: 3402dc98b2cb96074c6ae3f94dfa594d
+      size: 5327100
+    - path: plots/data_distribution.png
+      hash: md5
+      md5: 5f7e77abafcd558f4a1ca3c369cde4dd
+      size: 36715
+  train:
+    cmd: python src/train.py
+    deps:
+    - path: data/prepared/train.csv
+      hash: md5
+      md5: 3402dc98b2cb96074c6ae3f94dfa594d
+      size: 5327100
+    - path: src/train.py
+      hash: md5
+      md5: 6365af61fe70e597c65f0a0f71c61476
+      size: 384
+    outs:
+    - path: models/model.pkl
+      hash: md5
+      md5: 776888b496dffb04dbd1da0f4b7ae8a3
+      size: 1302947
+  evaluate:
+    cmd: python src/evaluate.py
+    deps:
+    - path: data/prepared/test.csv
+      hash: md5
+      md5: 18daa17175f32cd5d102becfdaec2739
+      size: 1331821
+    - path: models/model.pkl
+      hash: md5
+      md5: 776888b496dffb04dbd1da0f4b7ae8a3
+      size: 1302947
+    - path: src/evaluate.py
+      hash: md5
+      md5: 060bf3d96ed6a54997ff4c6905c76647
+      size: 531
+    outs:
+    - path: metrics.json
+      hash: md5
+      md5: 4df29dbbb0f377bd03348276daecf864
+      size: 48
