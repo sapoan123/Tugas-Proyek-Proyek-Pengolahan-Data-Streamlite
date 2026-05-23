@@ -1,0 +1,34 @@
+{
+  "status": "SUCCESS",
+  "kmeans": {
+    "model": "KMeans",
+    "n_clusters": 3,
+    "inertia": 4605353278.822431,
+    "cluster_distribution": {
+      "0": 397882,
+      "2": 1,
+      "1": 1
+    }
+  },
+  "arm": {
+    "model": "Association Rule Mining (Apriori)",
+    "total_rules": 76,
+    "support": {
+      "min": 0.020181308007770342,
+      "max": 0.02946255126268077,
+      "average": 0.0234856918899883
+    },
+    "confidence": {
+      "min": 0.2196124486200822,
+      "max": 0.8944954128440368,
+      "average": 0.49366047769436633
+    },
+    "lift": {
+      "min": 3.8218652950310554,
+      "max": 24.02784611497494,
+      "average": 10.61117510241005
+    },
+    "high_confidence_rules": 32,
+    "high_lift_rules": 76
+  }
+}

@@ -1,25 +1,27 @@
 stages:
-  preparation:
-    cmd: python src/prepare.py
+  preprocessing:
+    cmd: python src/data_preprocessing.py
     deps:
-    - data/raw/Online Retail.xlsx
-    - src/prepare.py
+      - src/data_preprocessing.py
+      - data/raw/Online Retail.xlsx
     outs:
-    - data/prepared/test.csv
-    - data/prepared/train.csv
-    - plots/data_distribution.png
-  train:
-    cmd: python src/train.py
+      - data/prepared/train.csv
+
+  training:
+    cmd: python src/model_training.py
     deps:
-    - data/prepared/train.csv
-    - src/train.py
+      - src/model_training.py
+      - data/prepared/train.csv
     outs:
-    - models/model.pkl
-  evaluate:
-    cmd: python src/evaluate.py
+      - models/model.pkl
+
+  evaluation:
+    cmd: python src/model_evaluation.py
     deps:
-    - data/prepared/test.csv
-    - models/model.pkl
-    - src/evaluate.py
-    outs:
-    - metrics.json
+      - src/model_evaluation.py
+      - models/model.pkl
+      - data/prepared/train.csv
+    metrics:
+      - metrics.json
+    plots:
+      - plots/prediction.png

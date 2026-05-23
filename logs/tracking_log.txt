@@ -1,0 +1,7 @@
+
+===== TRACKING LOG =====
+Waktu: 2026-04-27 04:27:10.399260
+Data sebelum: (541909, 8)
+Data sesudah: (397924, 9)
+Missing sebelum: 136534
+Missing sesudah: 0

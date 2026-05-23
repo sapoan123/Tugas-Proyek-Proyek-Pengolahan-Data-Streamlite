@@ -60,3 +60,59 @@ stages:
       hash: md5
       md5: 4df29dbbb0f377bd03348276daecf864
       size: 48
+  preprocessing:
+    cmd: python src/data_preprocessing.py
+    deps:
+    - path: data/raw/Online Retail.xlsx
+      hash: md5
+      md5: 8f8e6d94ba88f976f4d8290cb2dea7fd
+      size: 23715344
+    - path: src/data_preprocessing.py
+      hash: md5
+      md5: 9a09798916251252c8883063d56ff019
+      size: 580
+    outs:
+    - path: data/prepared/train.csv
+      hash: md5
+      md5: 41970c17679f272ae172b764c71b3f0d
+      size: 3404247
+  training:
+    cmd: python src/model_training.py
+    deps:
+    - path: data/prepared/train.csv
+      hash: md5
+      md5: 41970c17679f272ae172b764c71b3f0d
+      size: 3404247
+    - path: src/model_training.py
+      hash: md5
+      md5: ca2d9bfa3ea769f4a80cd5cd625935ff
+      size: 2037
+    outs:
+    - path: models/model.pkl
+      hash: md5
+      md5: 37398b50ec5f19fd6c35880ea752379e
+      size: 11121
+  evaluation:
+    cmd: python src/model_evaluation.py
+    deps:
+    - path: data/prepared/train.csv
+      hash: md5
+      md5: 41970c17679f272ae172b764c71b3f0d
+      size: 3404247
+    - path: models/model.pkl
+      hash: md5
+      md5: 37398b50ec5f19fd6c35880ea752379e
+      size: 11121
+    - path: src/model_evaluation.py
+      hash: md5
+      md5: 5dbb277fecf5451f5dccdded5aa76e42
+      size: 1245
+    outs:
+    - path: metrics.json
+      hash: md5
+      md5: 744be1b6159e890ca9579e2cdad35bb1
+      size: 27
+    - path: plots/prediction.png
+      hash: md5
+      md5: 53e5181e043a194b0789b4dcb1a9e08e
+      size: 15435
