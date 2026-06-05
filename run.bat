@@ -1,11 +1,11 @@
 @echo off
-title Aplikasi Prediksi Perilaku Konsumen
+title Aplikasi Analisis Pola Perilaku Konsumen
 echo ============================================
-echo   APLIKASI PREDIKSI PERILAKU KONSUMEN
+echo   ANALISIS POLA PERILAKU KONSUMEN
 echo   K-Means Clustering + Association Rule Mining
 echo ============================================
 echo.
-echo Sedang menjalankan aplikasi...
+echo Menjalankan Streamlit app...
 echo.
-python main.py
+streamlit run src/app.py
 pause

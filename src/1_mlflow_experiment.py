@@ -32,7 +32,7 @@ def load_data():
 
     if not os.path.exists(path):
         raise FileNotFoundError(
-            f"❌ File tidak ditemukan: {path}"
+            f" File tidak ditemukan: {path}"
         )
 
     df = pd.read_excel(

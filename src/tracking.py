@@ -13,7 +13,7 @@ def load_processed_data():
     return pd.read_csv(path)
 
 def track_dataset(df_before, df_after):
-    print("\n📈 ===== DATASET TRACKING =====")
+    print("\n ===== DATASET TRACKING =====")
 
     log_dir = os.path.join(os.path.dirname(__file__), "..", "logs")
     os.makedirs(log_dir, exist_ok=True)
@@ -28,7 +28,7 @@ def track_dataset(df_before, df_after):
         f.write(f"Missing sebelum: {df_before.isnull().sum().sum()}\n")
         f.write(f"Missing sesudah: {df_after.isnull().sum().sum()}\n")
 
-    print("✅ Tracking disimpan di logs/tracking_log.txt")
+    print(" Tracking disimpan di logs/tracking_log.txt")
 
 if __name__ == "__main__":
     df_before = load_raw_data()

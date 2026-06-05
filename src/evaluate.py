@@ -22,8 +22,8 @@ def evaluate_kmeans(df):
 
     # cek apakah kolom Cluster ada
     if 'Cluster' not in df.columns:
-        print("⚠️ Kolom 'Cluster' tidak ditemukan, melakukan clustering otomatis...")
-        print("📊 Kolom yang tersedia:", df.columns.tolist())
+        print(" Kolom 'Cluster' tidak ditemukan, melakukan clustering otomatis...")
+        print(" Kolom yang tersedia:", df.columns.tolist())
         
         # Lakukan clustering otomatis dengan KMeans
         try:
@@ -32,46 +32,46 @@ def evaluate_kmeans(df):
             kmeans = KMeans(n_clusters=3, random_state=42)
             df['Cluster'] = -1  # default value
             df.loc[X.index, 'Cluster'] = kmeans.fit_predict(X)
-            print("✅ Clustering selesai dengan k=3")
+            print(" Clustering selesai dengan k=3")
         except Exception as e:
-            print(f"❌ Error saat clustering: {e}")
+            print(f" Error saat clustering: {e}")
             return None
 
     # ambil fitur
     X = df[['Quantity', 'UnitPrice', 'TotalPrice']].copy()
     labels = df['Cluster'].copy()
 
-    print(f"📊 Total data points: {len(X)}")
-    print(f"📊 Jumlah cluster unik sebelum filtering: {len(labels.unique())}")
-    print(f"📊 Cluster yang ditemukan: {sorted(labels.unique())}")
+    print(f" Total data points: {len(X)}")
+    print(f" Jumlah cluster unik sebelum filtering: {len(labels.unique())}")
+    print(f" Cluster yang ditemukan: {sorted(labels.unique())}")
 
     # buang NaN biar aman
     valid = X.notnull().all(axis=1)
     X = X[valid]
     labels = labels.loc[valid]
 
-    print(f"📊 Data setelah filtering NaN: {len(X)}")
+    print(f" Data setelah filtering NaN: {len(X)}")
 
-    # 🔥 SAMPLING BIAR CEPAT
+    #  SAMPLING BIAR CEPAT
     if len(X) > 5000:
         sample_idx = X.sample(5000, random_state=42).index
         X = X.loc[sample_idx]
         labels = labels.loc[sample_idx]
-        print(f"📊 Data setelah sampling: {len(X)}")
+        print(f" Data setelah sampling: {len(X)}")
 
     # cek cluster valid - PERBAIKAN: jika < 2 cluster, lakukan re-clustering
     unique_clusters = len(labels.unique())
-    print(f"📊 Jumlah cluster unik setelah filtering: {unique_clusters}")
+    print(f" Jumlah cluster unik setelah filtering: {unique_clusters}")
     
     if unique_clusters < 2:
-        print(f"⚠️ Hanya {unique_clusters} cluster ditemukan, melakukan re-clustering...")
+        print(f" Hanya {unique_clusters} cluster ditemukan, melakukan re-clustering...")
         try:
             kmeans = KMeans(n_clusters=3, random_state=42)
             labels = kmeans.fit_predict(X)
-            print(f"✅ Re-clustering selesai, cluster unik: {len(np.unique(labels))}")
+            print(f" Re-clustering selesai, cluster unik: {len(np.unique(labels))}")
             unique_clusters = len(np.unique(labels))
         except Exception as e:
-            print(f"❌ Error saat re-clustering: {e}")
+            print(f" Error saat re-clustering: {e}")
             # Return hasil error (akan ditangani di main)
             return {
                 "status": "FAILED",
@@ -82,7 +82,7 @@ def evaluate_kmeans(df):
 
     # Hitung berbagai metrik evaluasi
     print("\n" + "="*50)
-    print("📈 HASIL EVALUASI KMEANS")
+    print(" HASIL EVALUASI KMEANS")
     print("="*50)
     
     try:
@@ -90,30 +90,30 @@ def evaluate_kmeans(df):
         davies_bouldin = davies_bouldin_score(X, labels)
         calinski_harabasz = calinski_harabasz_score(X, labels)
         
-        print(f"✅ Silhouette Score: {silhouette:.4f}")
+        print(f" Silhouette Score: {silhouette:.4f}")
         print(f"   (Range: -1 to 1, lebih tinggi lebih baik)")
-        print(f"\n✅ Davies-Bouldin Index: {davies_bouldin:.4f}")
+        print(f"\n Davies-Bouldin Index: {davies_bouldin:.4f}")
         print(f"   (Lebih rendah lebih baik)")
-        print(f"\n✅ Calinski-Harabasz Score: {calinski_harabasz:.4f}")
+        print(f"\n Calinski-Harabasz Score: {calinski_harabasz:.4f}")
         print(f"   (Lebih tinggi lebih baik)")
         
         metrics_calculated = True
     except Exception as e:
-        print(f"⚠️ Error menghitung metrics: {e}")
+        print(f" Error menghitung metrics: {e}")
         silhouette = davies_bouldin = calinski_harabasz = None
         metrics_calculated = False
     
     # Distribusi cluster
     from collections import Counter
     cluster_counts = Counter(labels)
-    print(f"\n📊 Distribusi Cluster:")
+    print(f"\n Distribusi Cluster:")
     for cluster in sorted(cluster_counts.keys()):
         count = cluster_counts[cluster]
         percentage = (count / len(labels)) * 100
         print(f"   Cluster {cluster}: {count} data points ({percentage:.1f}%)")
     
     # Statistik fitur per cluster
-    print(f"\n📊 Rata-rata Fitur per Cluster:")
+    print(f"\n Rata-rata Fitur per Cluster:")
     df_eval = X.copy()
     df_eval['Cluster'] = labels
     for cluster in sorted(set(labels)):
@@ -147,14 +147,14 @@ def evaluate_apriori(rules):
     print("\n=== EVALUASI ASSOCIATION RULE MINING (ARM) ===")
 
     if rules is None or len(rules) == 0:
-        print("⚠️ Tidak ada rules ditemukan atau file tidak tersedia")
+        print(" Tidak ada rules ditemukan atau file tidak tersedia")
         return {
             "status": "NO_RULES",
             "total_rules": 0,
             "message": "Tidak ada association rules ditemukan"
         }
 
-    print(f"📊 Total rules ditemukan: {len(rules)}")
+    print(f" Total rules ditemukan: {len(rules)}")
     
     try:
         # Statistik dasar
@@ -169,13 +169,13 @@ def evaluate_apriori(rules):
         min_lift = float(rules['lift'].min())
         max_lift = float(rules['lift'].max())
         
-        print(f"\n📊 Statistik Rules:")
+        print(f"\n Statistik Rules:")
         print(f"   Support    - Min: {min_support:.4f}, Max: {max_support:.4f}, Avg: {avg_support:.4f}")
         print(f"   Confidence - Min: {min_confidence:.4f}, Max: {max_confidence:.4f}, Avg: {avg_confidence:.4f}")
         print(f"   Lift       - Min: {min_lift:.4f}, Max: {max_lift:.4f}, Avg: {avg_lift:.4f}")
         
         # Top 5 rules by lift
-        print("\n📊 Top 5 Rules (sorted by lift):")
+        print("\n Top 5 Rules (sorted by lift):")
         top_rules = rules.nlargest(5, 'lift')[['antecedents', 'consequents', 'support', 'confidence', 'lift']]
         print(top_rules.to_string())
         
@@ -194,7 +194,7 @@ def evaluate_apriori(rules):
         high_confidence_rules = len(rules[rules['confidence'] >= 0.5])
         high_lift_rules = len(rules[rules['lift'] >= 2])
         
-        print(f"\n📊 Analisis Lebih Lanjut:")
+        print(f"\n Analisis Lebih Lanjut:")
         print(f"   Rules dengan confidence >= 0.5: {high_confidence_rules}")
         print(f"   Rules dengan lift >= 2: {high_lift_rules}")
         
@@ -226,7 +226,7 @@ def evaluate_apriori(rules):
         return results
         
     except Exception as e:
-        print(f"⚠️ Error saat evaluasi ARM: {e}")
+        print(f" Error saat evaluasi ARM: {e}")
         return {
             "status": "ERROR",
             "error_message": str(e),
@@ -245,7 +245,7 @@ def main():
     
     # Gabungkan hasil KMEANS dan ARM ke dalam satu JSON
     print("\n" + "="*50)
-    print("💾 MENYIMPAN HASIL EVALUASI GABUNGAN")
+    print(" MENYIMPAN HASIL EVALUASI GABUNGAN")
     print("="*50)
     
     combined_results = {
@@ -260,12 +260,12 @@ def main():
     try:
         with open(results_path, 'w') as f:
             json.dump(combined_results, f, indent=2)
-        print(f"✅ Hasil evaluasi KMEANS + ARM disimpan ke: metrics.json")
+        print(f" Hasil evaluasi KMEANS + ARM disimpan ke: metrics.json")
     except Exception as e:
-        print(f"❌ Error menyimpan metrics.json: {e}")
+        print(f" Error menyimpan metrics.json: {e}")
     
     print("\n" + "="*50)
-    print("✅ EVALUASI SELESAI")
+    print(" EVALUASI SELESAI")
     print("="*50)
 
 

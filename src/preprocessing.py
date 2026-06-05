@@ -4,15 +4,15 @@ import os
 def load_data():
     current_dir = os.path.dirname(__file__)
 
-    # 🔥 FIX PATH (lebih aman & fleksibel)
+    #  FIX PATH (lebih aman & fleksibel)
     path = os.path.abspath(
         os.path.join(current_dir, "..", "data", "raw", "Online Retail.xlsx")
     )
 
-    print("📂 Loading dataset dari:", path)
+    print(" Loading dataset dari:", path)
 
     if not os.path.exists(path):
-        raise FileNotFoundError(f"❌ File tidak ditemukan: {path}")
+        raise FileNotFoundError(f" File tidak ditemukan: {path}")
 
     return pd.read_excel(path)
 
@@ -32,7 +32,7 @@ def preprocess_data(df):
     # Tambah kolom total harga
     df['TotalPrice'] = df['Quantity'] * df['UnitPrice']
 
-    print("✅ Data setelah preprocessing:", df.shape)
+    print(" Data setelah preprocessing:", df.shape)
 
     return df
 
@@ -47,7 +47,7 @@ def save_data(df):
     file_path = os.path.join(output_dir, "data_clean.csv")
     df.to_csv(file_path, index=False)
 
-    print("💾 Data disimpan di:", file_path)
+    print(" Data disimpan di:", file_path)
 
     return file_path
 

@@ -47,7 +47,7 @@ def save_kmeans():
         ].idxmax()
     ]
 
-    print("\n🏆 BEST KMEANS")
+    print("\n BEST KMEANS")
 
     print(
         "Run ID :",
@@ -89,7 +89,7 @@ def save_kmeans():
     )
 
     print(
-        f"✅ Model KMeans disimpan di: "
+        f" Model KMeans disimpan di: "
         f"{model_path}"
     )
 
@@ -115,14 +115,14 @@ def save_arm():
     if arm.empty:
 
         print(
-            "❌ Run Association Rule tidak ditemukan"
+            " Run Association Rule tidak ditemukan"
         )
 
         return
 
     arm_run = arm.iloc[0]
 
-    print("\n🏆 ASSOCIATION RULE")
+    print("\n ASSOCIATION RULE")
 
     print(
         "Run ID :",
@@ -166,7 +166,7 @@ def save_arm():
     )
 
     print(
-        f"✅ Model ARM disimpan di: "
+        f" Model ARM disimpan di: "
         f"{arm_model_path}"
     )
 
@@ -181,5 +181,5 @@ if __name__ == "__main__":
     save_arm()
 
     print(
-        "\n✅ Semua model berhasil disimpan"
+        "\n Semua model berhasil disimpan"
     )

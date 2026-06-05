@@ -9,7 +9,7 @@ import time
 import gc
 
 st.set_page_config(
-    page_title="Prediksi Perilaku Konsumen - E-commerce",
+    page_title="Analisis Pola Perilaku Konsumen - E-commerce",
     page_icon="",
     layout="wide"
 )
@@ -62,6 +62,9 @@ def load_cluster_info():
     df = df[(df['Quantity'] > 0) & (df['UnitPrice'] > 0)]
     sample = df.sample(min(50000, len(df)), random_state=42)
     sample['TotalPrice'] = sample['Quantity'] * sample['UnitPrice']
+    sample = sample[np.isfinite(sample['TotalPrice'])]
+    if sample.empty:
+        return []
     preds = m.predict(sample[['Quantity', 'UnitPrice', 'TotalPrice']])
     sample['Cluster'] = preds
 
@@ -113,10 +116,17 @@ if st.session_state.history.empty:
 def compute_segment_info(df):
     if df.empty or 'Cluster' not in df.columns:
         return []
+    clean = df.copy()
+    for c in ['Quantity', 'UnitPrice', 'TotalPrice']:
+        clean[c] = pd.to_numeric(clean[c], errors='coerce')
+    clean = clean.dropna(subset=['Quantity', 'UnitPrice', 'TotalPrice'])
+    clean = clean[np.isfinite(clean['Quantity']) & np.isfinite(clean['UnitPrice']) & np.isfinite(clean['TotalPrice'])]
+    if clean.empty:
+        return []
     info = []
-    order = df.groupby('Cluster')['TotalPrice'].mean().sort_values()
+    order = clean.groupby('Cluster')['TotalPrice'].mean().sort_values()
     for i, (c, _) in enumerate(order.items()):
-        data = df[df['Cluster'] == c]
+        data = clean[clean['Cluster'] == c]
         if i == 0:
             label = "Low Spender"
         elif i == len(order) - 1:
@@ -127,7 +137,7 @@ def compute_segment_info(df):
             'cluster': int(c),
             'label': label,
             'count': len(data),
-            'pct': len(data) / len(df) * 100,
+            'pct': len(data) / len(clean) * 100,
             'avg_qty': data['Quantity'].mean(),
             'avg_price': data['UnitPrice'].mean(),
             'avg_total': data['TotalPrice'].mean(),
@@ -149,12 +159,15 @@ def compute_segment_info(df):
 
 def save_prediction_to_history(qty, price, total, cluster, segmen):
     """Fungsi untuk menyimpan prediksi ke history"""
+    total = round(float(total), 2)
+    if not np.isfinite(total):
+        return
     new_row = pd.DataFrame([{
-        'Quantity': qty,
-        'UnitPrice': price,
-        'TotalPrice': round(total, 2),
+        'Quantity': int(qty),
+        'UnitPrice': round(float(price), 2),
+        'TotalPrice': total,
         'Cluster': int(cluster),
-        'Segmen': segmen
+        'Segmen': str(segmen)
     }])
     st.session_state.history = pd.concat([st.session_state.history, new_row], ignore_index=True)
     st.session_state.last_cluster = int(cluster)
@@ -169,12 +182,23 @@ def batch_predict(df, model, batch_size=5000):
     total_rows = len(df)
     predictions = []
     
+    # Clean input data
+    batch_data = df[['Quantity', 'UnitPrice', 'TotalPrice']].copy()
+    for c in ['Quantity', 'UnitPrice', 'TotalPrice']:
+        batch_data[c] = pd.to_numeric(batch_data[c], errors='coerce')
+    batch_data = batch_data.dropna()
+    batch_data = batch_data[np.isfinite(batch_data['Quantity']) & np.isfinite(batch_data['UnitPrice']) & np.isfinite(batch_data['TotalPrice'])]
+    if batch_data.empty:
+        return np.array([])
+    
+    total_rows = len(batch_data)
+    
     # Buat placeholder untuk progress
     progress_bar = st.progress(0)
     status_text = st.empty()
     
     for i in range(0, total_rows, batch_size):
-        batch = df[['Quantity', 'UnitPrice', 'TotalPrice']].iloc[i:i+batch_size]
+        batch = batch_data.iloc[i:i+batch_size]
         batch_preds = model.predict(batch)
         predictions.extend(batch_preds)
         
@@ -193,15 +217,15 @@ def batch_predict(df, model, batch_size=5000):
 
 # ======================= SIDEBAR =======================
 st.sidebar.markdown(
-    "<h2 style='text-align: center;'>  Prediksi<br>Perilaku Konsumen</h2>"
+    "<h2 style='text-align: center;'>  Analisis Pola Perilaku<br>Konsumen</h2>"
     "<p style='text-align: center; color: #888; font-size: 0.85em;'>"
-    "K-Means + Association Rules</p><hr>",
+    "Meningkatkan Konversi Pembelian<br>pada Platform E-Commerce</p><hr>",
     unsafe_allow_html=True
 )
 
 menu = st.sidebar.radio(
     "",
-    ["  Prediksi Segmen", "  Rekomendasi Produk", "  Insight Bisnis", "  Info Model"],
+    ["  Analisis Segmen", "  Rekomendasi Produk", "  Insight Bisnis", "  Info Model"],
     index=0
 )
 
@@ -211,17 +235,17 @@ if model:
     st.sidebar.success(f" Model: {model.n_clusters} cluster")
 if rules is not None:
     st.sidebar.success(f" Rules: {len(rules)} aturan")
-st.sidebar.info(f" Riwayat: {len(st.session_state.history)} prediksi")
+st.sidebar.info(f" Riwayat: {len(st.session_state.history)} analisis")
 
 # Tampilkan notifikasi jika baru saja tersimpan
 if st.session_state.save_success and (time.time() - st.session_state.save_timestamp) < 3:
     st.sidebar.success("✓ Data baru disimpan!")
 
-# ======================= PREDIKSI SEGMEN =======================
-if menu == "  Prediksi Segmen":
+# ======================= ANALISIS SEGMEN =======================
+if menu == "  Analisis Segmen":
     st.markdown(
-        "<h1 style='text-align: center;'>  Prediksi Segmen Pelanggan</h1>"
-        "<p style='text-align: center; color: #666;'>Masukkan data transaksi untuk mengetahui segmen pelanggan</p><hr>",
+        "<h1 style='text-align: center;'>  Analisis Pola Perilaku Konsumen</h1>"
+        "<p style='text-align: center; color: #666;'>Menganalisis pola perilaku konsumen dalam meningkatkan konversi pembelian pada platform E-Commerce</p><hr>",
         unsafe_allow_html=True
     )
 
@@ -237,7 +261,7 @@ if menu == "  Prediksi Segmen":
                 qty_fast = st.number_input("Quantity", min_value=1, value=10, key="qty_fast")
                 price_fast = st.number_input("UnitPrice (£)", min_value=0.01, value=5.0, step=0.5, key="price_fast")
                 total_fast = qty_fast * price_fast
-                pred_fast = model.predict([[qty_fast, price_fast, total_fast]])[0]
+                pred_fast = model.predict([[float(qty_fast), float(price_fast), float(total_fast)]])[0]
                 label_map = {c['cluster']: c['label'] for c in cluster_info} if cluster_info else {}
                 label_fast = label_map.get(int(pred_fast), f"Cluster {pred_fast}")
 
@@ -263,7 +287,7 @@ if menu == "  Prediksi Segmen":
             tab_in, tab_up = st.tabs(["  Input Table", "  Upload File"])
 
             with tab_in:
-                st.caption("Tambah baris sesuai kebutuhan, lalu klik tombol prediksi.")
+                st.caption("Tambah baris sesuai kebutuhan, lalu klik tombol analisis.")
                 edited = st.data_editor(
                     pd.DataFrame({'Quantity': pd.Series(dtype='int'), 'UnitPrice': pd.Series(dtype='float')}),
                     num_rows="dynamic",
@@ -273,15 +297,21 @@ if menu == "  Prediksi Segmen":
                         "UnitPrice": st.column_config.NumberColumn("UnitPrice (£)", min_value=0.01, format="£%.2f", required=True)
                     }
                 )
-                if st.button("  Prediksi Semua", type="primary", use_container_width=True):
+                if st.button("  Analisis Semua", type="primary", use_container_width=True):
                     if edited.empty:
-                        st.warning("❌ Tabel kosong.")
+                        st.warning(" Tabel kosong.")
                     else:
                         try:
                             df = edited.copy()
+                            df['Quantity'] = pd.to_numeric(df['Quantity'], errors='coerce')
+                            df['UnitPrice'] = pd.to_numeric(df['UnitPrice'], errors='coerce')
+                            df = df.dropna(subset=['Quantity', 'UnitPrice'])
+                            if df.empty:
+                                st.warning("Tidak ada data valid setelah filter. Pastikan semua baris terisi dengan benar.")
+                                st.stop()
                             df['TotalPrice'] = (df['Quantity'] * df['UnitPrice']).round(2)
                             
-                            with st.spinner("🔄 Melakukan prediksi cluster..."):
+                            with st.spinner(" Menganalisis cluster..."):
                                 preds = batch_predict(df, model, batch_size=5000)
                             
                             df['Cluster'] = preds
@@ -293,14 +323,14 @@ if menu == "  Prediksi Segmen":
                             label_map = {c['cluster']: c['label'] for c in cluster_info} if cluster_info else {}
                             st.session_state.last_segmen = label_map.get(int(majority), f"Cluster {majority}")
                             st.balloons()
-                            st.success(f"✓ **{len(df)} transaksi** berhasil diprediksi dan disimpan!")
+                            st.success(f"✓ **{len(df)} transaksi** berhasil dianalisis dan disimpan!")
                             time.sleep(1)
                             st.rerun()
                         except Exception as e:
-                            st.error(f"❌ Prediksi gagal: {e}")
+                            st.error(f" Analisis gagal: {e}")
 
             with tab_up:
-                # Set limit untuk prediksi upload file
+                # Set limit untuk analisis upload file
                 MAX_ROWS_UPLOAD = 10000
                 
                 up = st.file_uploader("Upload CSV / Excel (kolom: Quantity, UnitPrice)", type=["csv", "xlsx"])
@@ -309,19 +339,21 @@ if menu == "  Prediksi Segmen":
                         # Check file size (max 50MB)
                         file_size_mb = up.size / (1024 * 1024)
                         if file_size_mb > 50:
-                            st.warning(f"⚠️ File terlalu besar ({file_size_mb:.1f}MB, max 50MB). Silakan upload file yang lebih kecil.")
+                            st.warning(f" File terlalu besar ({file_size_mb:.1f}MB, max 50MB). Silakan upload file yang lebih kecil.")
                         else:
-                            with st.spinner("📂 Membaca file..."):
+                            with st.spinner(" Membaca file..."):
                                 df = pd.read_excel(up, engine='openpyxl') if up.name.endswith('xlsx') else pd.read_csv(up)
                             
                             # Validasi kolom
                             if not {'Quantity', 'UnitPrice'}.issubset(df.columns):
-                                st.error(f"❌ Kolom wajib: Quantity, UnitPrice. Ditemukan: {list(df.columns)}")
+                                st.error(f" Kolom wajib: Quantity, UnitPrice. Ditemukan: {list(df.columns)}")
                             else:
                                 total_rows = len(df)
-                                st.info(f"📊 File berhasil dibaca: **{total_rows}** baris")
+                                st.info(f" File berhasil dibaca: **{total_rows}** baris")
                                 
                                 # Data cleaning
+                                df['Quantity'] = pd.to_numeric(df['Quantity'], errors='coerce')
+                                df['UnitPrice'] = pd.to_numeric(df['UnitPrice'], errors='coerce')
                                 df = df.dropna(subset=['Quantity', 'UnitPrice'])
                                 df = df[(df['Quantity'] > 0) & (df['UnitPrice'] > 0)]
                                 valid_rows = len(df)
@@ -332,7 +364,7 @@ if menu == "  Prediksi Segmen":
                                     # **CHECK LIMIT - Sangat penting untuk keamanan**
                                     if valid_rows > MAX_ROWS_UPLOAD:
                                         st.warning(
-                                            f"⚠️ **DATA TERLALU BANYAK!**\n\n"
+                                            f" **DATA TERLALU BANYAK!**\n\n"
                                             f"File Anda memiliki **{valid_rows:,}** baris valid, "
                                             f"namun sistem hanya bisa memproses maksimal **{MAX_ROWS_UPLOAD:,}** baris untuk keamanan.\n\n"
                                             f"Pilih opsi di bawah:"
@@ -346,7 +378,7 @@ if menu == "  Prediksi Segmen":
                                                 st.session_state.process_upload = True
                                         
                                         with col_opt2:
-                                            if st.button("❌ Batal (Upload File Lain)", use_container_width=True):
+                                            if st.button(" Batal (Upload File Lain)", use_container_width=True):
                                                 st.info("Upload dibatalkan. Silakan upload file dengan data yang lebih sedikit.")
                                                 st.stop()
                                         
@@ -354,11 +386,11 @@ if menu == "  Prediksi Segmen":
                                             st.stop()
                                     
                                     # Batch prediction dengan progress
-                                    st.markdown("**Memproses prediksi...**")
+                                    st.markdown("**Memproses analisis...**")
                                     label_map = {c['cluster']: c['label'] for c in cluster_info} if cluster_info else {}
                                     df['TotalPrice'] = (df['Quantity'] * df['UnitPrice']).round(2)
                                     
-                                    with st.spinner("🔄 Melakukan prediksi cluster..."):
+                                    with st.spinner(" Menganalisis cluster..."):
                                         preds = batch_predict(df, model, batch_size=5000)
                                     
                                     df['Cluster'] = preds
@@ -374,16 +406,16 @@ if menu == "  Prediksi Segmen":
                                     label_map = {c['cluster']: c['label'] for c in cluster_info} if cluster_info else {}
                                     st.session_state.last_segmen = label_map.get(int(majority), f"Cluster {majority}")
                                     
-                                    st.success(f"✅ **{len(df)} transaksi** berhasil diprediksi dan disimpan ke riwayat!")
+                                    st.success(f" **{len(df)} transaksi** berhasil dianalisis dan disimpan ke riwayat!")
                                     time.sleep(1)
                                     st.rerun()
                                 else:
-                                    st.warning("⚠️ Data kosong setelah filter (semua baris tidak valid).")
+                                    st.warning(" Data kosong setelah filter (semua baris tidak valid).")
                     except Exception as e:
-                        st.error(f"❌ Error: {str(e)}")
+                        st.error(f" Error: {str(e)}")
 
         st.markdown("---")
-        st.markdown("###   Hasil Prediksi")
+        st.markdown("###   Hasil Analisis")
 
         if st.session_state.history.empty:
             st.info("Belum ada data. Gunakan input cepat, tabel, atau upload file.")
@@ -393,7 +425,7 @@ if menu == "  Prediksi Segmen":
             with tab_hasil:
                 col_h1, col_h2, col_h3 = st.columns([3, 1, 1])
                 with col_h1:
-                    st.markdown("**Daftar Hasil Prediksi**")
+                    st.markdown("**Daftar Hasil Analisis**")
                 with col_h2:
                     if st.button("   Hapus Dipilih", type="secondary", use_container_width=True):
                         st.session_state.show_delete_checkboxes = not st.session_state.get("show_delete_checkboxes", False)
@@ -436,15 +468,15 @@ if menu == "  Prediksi Segmen":
                         with cols[0]:
                             st.session_state.delete_checkboxes[idx] = st.checkbox("", key=f"del_{idx}")
                         with cols[1]:
-                            st.write(f"{int(row['Quantity'])}")
+                            st.write(f"{int(row['Quantity'])}" if pd.notna(row['Quantity']) else "-")
                         with cols[2]:
-                            st.write(f"£{row['UnitPrice']:.2f}")
+                            st.write(f"£{row['UnitPrice']:.2f}" if pd.notna(row['UnitPrice']) else "-")
                         with cols[3]:
-                            st.write(f"£{row['TotalPrice']:.2f}")
+                            st.write(f"£{row['TotalPrice']:.2f}" if pd.notna(row['TotalPrice']) else "-")
                         with cols[4]:
-                            st.write(f"{int(row['Cluster'])}")
+                            st.write(f"{int(row['Cluster'])}" if pd.notna(row['Cluster']) else "-")
                         with cols[5]:
-                            st.write(f"{row['Segmen']}")
+                            st.write(f"{row['Segmen']}" if pd.notna(row['Segmen']) else "-")
                         with cols[6]:
                             st.write("")
                     
@@ -468,30 +500,43 @@ if menu == "  Prediksi Segmen":
                 st.dataframe(st.session_state.history, use_container_width=True)
                 
                 csv = st.session_state.history.to_csv(index=False).encode('utf-8')
-                st.download_button("  Download Semua CSV", csv, "prediksi_semua.csv", "text/csv")
+                st.download_button("  Download Semua CSV", csv, "analisis_semua.csv", "text/csv")
 
             with tab_grafik:
+                plot_data = st.session_state.history.copy()
+                plot_data = plot_data.dropna(subset=['Segmen'])
+                for c in ['Quantity', 'UnitPrice', 'TotalPrice']:
+                    plot_data[c] = pd.to_numeric(plot_data[c], errors='coerce')
+                plot_data = plot_data.dropna(subset=['Quantity', 'UnitPrice', 'TotalPrice'])
+                plot_data = plot_data[np.isfinite(plot_data['TotalPrice'])]
+
                 col_g1, col_g2 = st.columns(2)
                 with col_g1:
-                    dist = st.session_state.history['Segmen'].value_counts().reset_index()
-                    dist.columns = ['Segmen', 'Jumlah']
-                    st.plotly_chart(px.pie(dist, values='Jumlah', names='Segmen', title='Distribusi Segmen'),
-                                    use_container_width=True)
+                    if not plot_data.empty:
+                        dist = plot_data['Segmen'].value_counts().reset_index()
+                        dist.columns = ['Segmen', 'Jumlah']
+                        st.plotly_chart(
+                            px.pie(dist, values='Jumlah', names='Segmen', title='Distribusi Segmen'),
+                            use_container_width=True
+                        )
                 with col_g2:
-                    avg = st.session_state.history.groupby('Segmen')['TotalPrice'].mean().reset_index()
-                    st.plotly_chart(px.bar(avg, x='Segmen', y='TotalPrice', color='Segmen',
-                                           title='Rata-rata Total per Segmen', text_auto='.2f'),
-                                    use_container_width=True)
+                    if not plot_data.empty:
+                        avg = plot_data.groupby('Segmen')['TotalPrice'].mean().reset_index()
+                        st.plotly_chart(
+                            px.bar(avg, x='Segmen', y='TotalPrice', color='Segmen',
+                                   title='Rata-rata Total per Segmen', text_auto='.2f'),
+                            use_container_width=True
+                        )
 
-                if len(st.session_state.history) > 1:
+                if len(plot_data) > 1:
                     st.plotly_chart(
-                        px.scatter(st.session_state.history, x='Quantity', y='UnitPrice',
+                        px.scatter(plot_data, x='Quantity', y='UnitPrice',
                                    size='TotalPrice', color='Segmen',
-                                   title='Sebaran Data Prediksi', size_max=20),
+                                   title='Sebaran Data Analisis', size_max=20),
                         use_container_width=True
                     )
 
-        # Tampilkan karakteristik HANYA jika ada data prediksi yang tersimpan di history
+        # Tampilkan karakteristik HANYA jika ada data analisis yang tersimpan di history
         if not st.session_state.history.empty and st.session_state.last_cluster is not None:
             st.markdown("---")
             st.markdown("###   Karakteristik Segmen Anda")
@@ -516,16 +561,21 @@ if menu == "  Prediksi Segmen":
                         unsafe_allow_html=True
                     )
                     
-                    # Statistik utama prediksi user dari history
-                    user_cluster_data = st.session_state.history[st.session_state.history['Cluster'] == st.session_state.last_cluster]
-                    user_avg_total = user_cluster_data['TotalPrice'].mean()
+                    # Statistik utama analisis user dari history
+                    user_cluster_data = st.session_state.history[
+                        st.session_state.history['Cluster'] == st.session_state.last_cluster
+                    ].copy()
+                    user_cluster_data['TotalPrice'] = pd.to_numeric(user_cluster_data['TotalPrice'], errors='coerce')
+                    user_cluster_data = user_cluster_data.dropna(subset=['TotalPrice'])
+                    user_cluster_data = user_cluster_data[np.isfinite(user_cluster_data['TotalPrice'])]
+                    user_avg_total = user_cluster_data['TotalPrice'].mean() if not user_cluster_data.empty else 0.0
                     user_count = len(user_cluster_data)
                     
                     col_k1, col_k2, col_k3, col_k4 = st.columns(4)
                     with col_k1:
                         st.metric("Rata-rata Belanja Anda", f"£{user_avg_total:.2f}", f"(vs £{ci['avg_total']:.2f} model)")
                     with col_k2:
-                        st.metric("Prediksi Tersimpan", f"{user_count}", f"dari {ci['count']} referensi")
+                        st.metric("Analisis Tersimpan", f"{user_count}", f"dari {ci['count']} referensi")
                     with col_k3:
                         st.metric("Rata-rata Item Model", f"{ci['avg_qty']:.1f}")
                     with col_k4:
@@ -539,7 +589,7 @@ if menu == "  Prediksi Segmen":
                         st.write(f"- Total revenue: **£{ci['total_revenue']:,.0f}**")
                         st.write(f"- Persentase: **{ci['pct']:.1f}%** dari total dataset")
                     with col_r2:
-                        st.markdown(f"** Prediksi Anda saat ini**")
+                        st.markdown(f"** Analisis Anda saat ini**")
                         st.write(f"- Transaksi tersimpan: **{user_count}**")
                         st.write(f"- Rata-rata belanja: **£{user_avg_total:.2f}**")
                         st.write(f"- Total belanja: **£{user_cluster_data['TotalPrice'].sum():,.2f}**")
@@ -629,7 +679,7 @@ elif menu == "  Insight Bisnis":
             result = compute_segment_info(cluster_data)
             ci = result[0] if result else None
         if ci is None:
-            st.info(f"Segmen Anda: **{st.session_state.last_segmen}** (Cluster {st.session_state.last_cluster}). Simpan hasil prediksi ke riwayat untuk melihat strategi.")
+            st.info(f"Segmen Anda: **{st.session_state.last_segmen}** (Cluster {st.session_state.last_cluster}). Simpan hasil analisis ke riwayat untuk melihat strategi.")
         else:
             st.markdown("###   Strategi untuk Segmen Anda")
             if ci['label'] == "Low Spender":
@@ -729,6 +779,6 @@ elif menu == "  Info Model":
     st.markdown("---")
     st.markdown(
         "<p style='text-align: center; color: #888; font-size: 0.8em;'>"
-        f"Aplikasi Prediksi Perilaku Konsumen v2.0 | {datetime.now().strftime('%Y-%m-%d')}</p>",
+        f"Aplikasi Analisis Pola Perilaku Konsumen v2.0 | {datetime.now().strftime('%Y-%m-%d')}</p>",
         unsafe_allow_html=True
     )
